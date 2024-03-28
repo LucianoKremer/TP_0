@@ -19,18 +19,16 @@ int iniciar_servidor(void)
 	getaddrinfo(NULL, PUERTO, &hints, &server_info);
 
 	// Creamos el socket de escucha del servidor
-
+	
 
 	socket_servidor = socket(server_info->ai_family,
                     server_info->ai_socktype,
                     server_info->ai_protocol);
 
 	// Asociamos el socket a un puerto
-
 	bind(socket_servidor, server_info->ai_addr, server_info->ai_addrlen);
 
 	// Escuchamos las conexiones entrantes
-
 	listen(socket_servidor, SOMAXCONN);
 
 	freeaddrinfo(server_info);
@@ -46,15 +44,15 @@ int esperar_cliente(int socket_servidor)
 	uint32_t resultError = -1;
 
 	// Aceptamos un nuevo cliente
-	log_info(logger, "Intento aceptar nuevo c!");
 
 	int socket_cliente = accept(socket_servidor, NULL, NULL);
 
 	recv(socket_cliente, &handshake, sizeof(uint32_t), MSG_WAITALL);
+
 	if(handshake == 1)
-   		send(socket_cliente, &resultOk, sizeof(uint32_t), NULL);
+   		send(socket_cliente, &resultOk, sizeof(uint32_t), 0);
 	else
-   		send(socket_cliente, &resultError, sizeof(uint32_t), NULL);
+   		send(socket_cliente, &resultError, sizeof(uint32_t), 0);
 
 	log_info(logger, "Se conecto un cliente!");
 
@@ -65,7 +63,9 @@ int recibir_operacion(int socket_cliente)
 {
 	int cod_op;
 	if(recv(socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) > 0)
+	{
 		return cod_op;
+	}
 	else
 	{
 		close(socket_cliente);
@@ -99,7 +99,6 @@ t_list* recibir_paquete(int socket_cliente)
 	void * buffer;
 	t_list* valores = list_create();
 	int tamanio;
-
 	buffer = recibir_buffer(&size, socket_cliente);
 	while(desplazamiento < size)
 	{

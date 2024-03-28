@@ -47,12 +47,13 @@ int main(void)
 	// ADVERTENCIA: Antes de continuar, tenemos que asegurarnos que el servidor esté corriendo para poder conectarnos a él
 
 	// Creamos una conexión hacia el servidor
+
 	conexion = crear_conexion(ip, puerto);
 	
 	uint32_t handshake = 1;
 	uint32_t result;
 
-	send(conexion, &handshake, sizeof(uint32_t), NULL);
+	send(conexion, &handshake, sizeof(uint32_t), 0);
 	recv(conexion, &result, sizeof(uint32_t), MSG_WAITALL);
 
 	if(result == -1){
@@ -64,9 +65,10 @@ int main(void)
 	// Enviamos al servidor el valor de CLAVE como mensaje
 
 	enviar_mensaje(valor, conexion);
+
 	log_info(logger, "Mensaje enviado \n");
 	// Armamos y enviamos el paquete
-	//paquete(conexion);
+	paquete(conexion);
 
 
 
@@ -97,7 +99,7 @@ t_config* iniciar_config(char *path, t_log* logger)
 	t_config* nuevo_config;
 	
 	if((nuevo_config = config_create(path)) == NULL){
-		log_info(logger,"[ERROR] No se pudo crear un nuevo config \n");
+		log_error(logger," No se pudo crear un nuevo config \n");
 		exit(1);
 	}
 		
@@ -114,26 +116,39 @@ void leer_consola(t_log* logger)
 	leido = readline("> ");
 
 	// El resto, las vamos leyendo y logueando hasta recibir un string vacío
-	while (strcmp(leido, ""))
+	while (!string_equals_ignore_case(leido, ""))
 	{
 		log_info(logger, leido);
 		leido = readline("> ");
-		free(leido);
+		
 	}
 	// ¡No te olvides de liberar las lineas antes de regresar!
+
+	free(leido);
 }
 
 void paquete(int conexion)
 {
 	// Ahora toca lo divertido!
 	char* leido;
-	t_paquete* paquete;
+	t_paquete* paquete = crear_paquete();
 
 	// Leemos y esta vez agregamos las lineas al paquete
+	leido = readline("> ");
 
+	// El resto, las vamos leyendo y logueando hasta recibir un string vacío
+	while (!string_equals_ignore_case(leido, ""))
+	{
+		agregar_a_paquete(paquete, leido, strlen(leido)+1);
+		leido = readline("> ");
+	}
+
+	enviar_paquete(paquete, conexion);
 
 	// ¡No te olvides de liberar las líneas y el paquete antes de regresar!
-	
+	eliminar_paquete(paquete);
+	free(leido);
+
 }
 
 void terminar_programa(int conexion, t_log* logger, t_config* config)
